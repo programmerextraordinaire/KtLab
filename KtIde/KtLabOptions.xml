@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Options xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <OptionsFileName>KtLabOptions.xml</OptionsFileName>
+  <StartupDirectory>.\</StartupDirectory>
+  <ScriptDirectory>C:\Python\Scripts</ScriptDirectory>
+  <PythonExecuteable>C:\Python\Python3\python.exe -i</PythonExecuteable>
+  <PythonErrorMessage>Traceback (most recent call last):</PythonErrorMessage>
+  <FontName>Courier New</FontName>
+  <FontSize>10</FontSize>
+  <GetMethods>dir(_object_)</GetMethods>
+  <GetMethodArgs>get_arg_text(_object_)</GetMethodArgs>
+  <InitScript>def execfile(filepath, globals=None, locals=None):
+    if globals is None:
+        globals = {}
+    globals.update({"__file__": filepath, "__name__": "__main__",})
+    with open(filepath, 'rb') as file:
+        exec(compile(file.read(), filepath, 'exec'), globals, locals)
+
+def _find_constructor(class_ob):
+    # Given a class object, return a function object used for the
+    # constructor (ie, __init__() ) or None if we can't find one.
+    try:
+        return class_ob.__init__.im_func
+    except AttributeError:
+        for base in class_ob.__bases__:
+            rc = _find_constructor(base)
+            if rc is not None: 
+                return rc
+    return None
+def get_arg_text(ob):
+    import types 
+    argText = '' 
+    if ob is not None: 
+        argOffset = 0 
+        if type(ob) in (types.ClassType, types.TypeType): 
+            fob = _find_constructor(ob) 
+            if fob is None: 
+                fob = lambda: None 
+            else: 
+                argOffset = 1 
+        elif type(ob)==types.MethodType: 
+            fob = ob.im_func 
+            argOffset = 1 
+        else: 
+            fob = ob 
+        # Try and build one for Python defined functions 
+        if type(fob) in [types.FunctionType, types.LambdaType]: 
+            try: 
+                realArgs = fob.func_code.co_varnames[argOffset:fob.func_code.co_argcount] 
+                defaults = fob.func_defaults or [] 
+                defaults = list(map(lambda name: '=%s' % repr(name), defaults)) 
+                defaults = [''] * (len(realArgs)-len(defaults)) + defaults 
+                items = map(lambda arg, dflt: arg+dflt, realArgs, defaults) 
+                if fob.func_code.co_flags &amp; 0x4: 
+                    items.append('...') 
+                if fob.func_code.co_flags &amp; 0x8: 
+                    items.append('***') 
+                argText = string.join(items , ', ') 
+                argText = '(%s)' % argText 
+            except: 
+                pass 
+        # See if we can use the docstring 
+        doc = getattr(ob, '__doc__', '') 
+        if doc: 
+            doc = doc.lstrip() 
+            pos = doc.find('\n') 
+            if pos &lt; 0 or pos &gt; 70: 
+                pos = 70 
+            if argText: 
+                argText += '\n' 
+            argText += doc[:pos] 
+    return argText
+</InitScript>
+</Options>

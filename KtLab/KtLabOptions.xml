@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Options xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <OptionsFileName>KtLabOptions.xml</OptionsFileName>
+  <StartupDirectory>.</StartupDirectory>
+  <ScriptDirectory>..</ScriptDirectory>
+  <PythonExecuteable>python.exe -i</PythonExecuteable>
+  <PythonErrorMessage>Traceback (most recent call last):</PythonErrorMessage>
+  <FontName>Courier New</FontName>
+  <FontSize>10</FontSize>
+  <InitScript1 />
+  <InitScript2 />
+</Options>
