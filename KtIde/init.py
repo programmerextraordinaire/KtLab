@@ -1,15 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Options xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <OptionsFileName>KtLabOptions.xml</OptionsFileName>
-  <StartupDirectory>.\</StartupDirectory>
-  <ScriptDirectory>C:\Python\Scripts</ScriptDirectory>
-  <PythonExecuteable>C:\Python\Python3\python.exe -i</PythonExecuteable>
-  <PythonErrorMessage>Traceback (most recent call last):</PythonErrorMessage>
-  <FontName>Courier New</FontName>
-  <FontSize>10</FontSize>
-  <GetMethods>dir(_object_)</GetMethods>
-  <GetMethodArgs>get_arg_text(_object_)</GetMethodArgs>
-  <InitScript>def execfile(filepath, globals=None, locals=None):
+﻿def execfile(filepath, globals=None, locals=None):
     if globals is None:
         globals = {}
     globals.update({"__file__": filepath, "__name__": "__main__",})
@@ -64,5 +53,4 @@ def get_arg_text(ob):
             lines.append(line)
     argspec = '\n'.join(lines)
     return argspec or _default_callable_argspec
-  </InitScript>
-</Options>
+

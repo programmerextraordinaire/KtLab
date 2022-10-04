@@ -17,6 +17,9 @@ namespace KtShell {
 		GetMethods = "dir(_object_)";
 		GetMethodArgs = "get_arg_text(_object_)";
 
+        // See: https://stackoverflow.com/questions/436198/what-is-an-alternative-to-execfile-in-python-3
+        // and https://github.com/python/cpython/blob/3.10/Lib/inspect.py
+        // asdf Lifted from Idle source code - calltip.py
 		InitScript = "# If Python 3, no execfile\r\n\
 def execfile(filepath, globals = None, locals = None):\r\n\
     if globals is None :\r\n\
@@ -34,50 +37,43 @@ def _find_constructor(class_ob):\r\n\
             rc = _find_constructor(base)\r\n\
             if rc is not None: \r\n\
                 return rc\r\n\
-    return None\r\n\
+    return None\r\n\\r\n\
 def get_arg_text(ob):\r\n\
     import types \r\n\
-    argText = '' \r\n\
-    if ob is not None: \r\n\
-        argOffset = 0 \r\n\
-        if type(ob) in (types.ClassType, types.TypeType): \r\n\
-            fob = _find_constructor(ob) \r\n\
-            if fob is None: \r\n\
-                fob = lambda: None \r\n\
-            else: \r\n\
-                argOffset = 1 \r\n\
-        elif type(ob)==types.MethodType: \r\n\
-            fob = ob.im_func \r\n\
-            argOffset = 1 \r\n\
-        else: \r\n\
-            fob = ob \r\n\
-        # Try and build one for Python defined functions \r\n\
-        if type(fob) in [types.FunctionType, types.LambdaType]: \r\n\
-            try: \r\n\
-                realArgs = fob.func_code.co_varnames[argOffset:fob.func_code.co_argcount] \r\n\
-                defaults = fob.func_defaults or [] \r\n\
-                defaults = list(map(lambda name: '=%s' % repr(name), defaults)) \r\n\
-                defaults = [''] * (len(realArgs)-len(defaults)) + defaults \r\n\
-                items = map(lambda arg, dflt: arg+dflt, realArgs, defaults) \r\n\
-                if fob.func_code.co_flags & 0x4: \r\n\
-                    items.append('...') \r\n\
-                if fob.func_code.co_flags & 0x8: \r\n\
-                    items.append('***') \r\n\
-                argText = string.join(items , ', ') \r\n\
-                argText = '(%s)' % argText \r\n\
-            except: \r\n\
-                pass \r\n\
-        # See if we can use the docstring \r\n\
-        doc = getattr(ob, '__doc__', '') \r\n\
-        if doc: \r\n\
-            doc = doc.lstrip() \r\n\
-            pos = doc.find('\\n') \r\n\
-            if pos < 0 or pos > 70: \r\n\
-                pos = 70 \r\n\
-            if argText: \r\n\
-                argText += '\\n' \r\n\
-            argText += doc[:pos] \r\n\
-    return argText\r\n";
+    import inspect \r\n\
+    _MAX_COLS = 85 \r\n\
+    _MAX_LINES = 5  \r\n\
+    _INDENT = ' ' * 4  \r\n\
+    _default_callable_argspec = 'See source or doc' \r\n\
+    _invalid_method = 'invalid method signature' \r\n\
+    argspec = '' \r\n\
+    try : \r\n\
+        ob_call = ob.__call__ \r\n\
+    except BaseException :  \r\n\
+        return ''   \r\n\
+    fob = ob_call if isinstance(ob_call, types.MethodType) else ob \r\n\
+    try : \r\n\
+        argspec = str(inspect.signature(fob)) \r\n\
+    except Exception as err : \r\n\
+        msg = str(err) \r\n\
+        if msg.startswith(_invalid_method) : \r\n\
+            return _invalid_method \r\n\
+        else : \r\n\
+            argspec = '' \r\n\
+    if isinstance(fob, type) and argspec == '()' : \r\n\
+        argspec = _default_callable_argspec \r\n\
+    lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent = _INDENT) if len(argspec) > _MAX_COLS else[argspec] if argspec else[]) \r\n\
+    doc = inspect.getdoc(ob) \r\n\
+    if doc: \r\n\
+        for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES] : \r\n\
+            line = line.strip() \r\n\
+            if not line : \r\n\
+                break \r\n\
+            if len(line) > _MAX_COLS: \r\n\
+                line = line[: _MAX_COLS - 3] + '...' \r\n\
+            lines.append(line) \r\n\
+    argspec = '\n'.join(lines) \r\n\
+    return argspec or _default_callable_argspec \r\n";
     };
 
 }

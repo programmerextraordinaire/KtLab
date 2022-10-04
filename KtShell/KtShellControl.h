@@ -58,6 +58,7 @@ namespace KtShell {
 #pragma region Member variables
 	private: String ^ delimStr = "\n";		// Use when communicating with Python.
 	private: String^ newline = System::Environment::NewLine;	// Use when working with strings not directly going to Python, e.g. Split.
+	private: String^ newlines = "\r\n\r\n";	// Use when working with strings not directly going to Python, e.g. Split.
 	private: delegate void SetRichEditTextCallback(String ^ text);
 	private: delegate void SafeFocusCallback();
 	private: delegate void SafeSetFontCallback(String ^ fontName, float fontSize);
@@ -283,6 +284,8 @@ namespace KtShell {
 				if (! fSuccess) 
 					throw gcnew System::Exception("KtShell::CreateShellRedirect - Create process failed.");
 				//return false;	//ErrorExit("Create process failed"); 
+
+				RunPythonInitScripts();
 
 				// Kick off reader thread
 				//KillReadThread();
@@ -718,10 +721,18 @@ namespace KtShell {
 		{
 			// Run initialization code for Python
 			// Wait until process loads.
-			//System::Threading::Thread::Sleep(1000);
-			//ProcessLinesFromStrings("print('Running initialization scripts.')");
+			System::Threading::Thread::Sleep(1000);
+			ProcessLinesFromStrings("print('Running initialization scripts.')");
 			//ProcessLinesFromStrings("def execfile(filename):    exec(open(filename).read())");
-			ProcessLinesFromStrings(options->InitScript);
+			ProcessLinesFromStrings("exec(open('init.py', 'rb').read())");
+			ProcessLinesFromStrings("print('Finished initialization scripts.')");
+
+		/*	array<String^>^ parts = options->InitScript->Split(newlines->ToCharArray());
+			for each (String ^ script in parts)
+			{
+				ProcessLinesFromStrings(script);
+			}*/
+			//ProcessLinesFromStrings(options->InitScript);
 		}
 
 	private:
