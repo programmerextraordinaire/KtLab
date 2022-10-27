@@ -989,6 +989,11 @@ namespace KtShell {
 			 {
 				 int linenumber = richTextBox1->GetLineFromCharIndex(richTextBox1->SelectionStart);
 				 int charPos = richTextBox1->GetFirstCharIndexFromLine(linenumber);
+				 int numLines = richTextBox1->Lines->Length;
+				 if (numLines <= linenumber)
+				 {
+					 linenumber = numLines < 1 ? 0 : numLines - 1;
+				 }
 				 charPos += richTextBox1->Lines[linenumber]->Length;
 				 return charPos;
 			 }
