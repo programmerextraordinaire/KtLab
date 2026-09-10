@@ -3,7 +3,7 @@
   <OptionsFileName>KtLabOptions.xml</OptionsFileName>
   <StartupDirectory>.\</StartupDirectory>
   <ScriptDirectory>C:\Python\Scripts</ScriptDirectory>
-  <PythonExecuteable>C:\Python\Python3\python.exe -i</PythonExecuteable>
+  <PythonExecuteable>C:\Users\thane\AppData\Local\Python\bin\python.exe -i</PythonExecuteable>
   <PythonErrorMessage>Traceback (most recent call last):</PythonErrorMessage>
   <FontName>Courier New</FontName>
   <FontSize>10</FontSize>
