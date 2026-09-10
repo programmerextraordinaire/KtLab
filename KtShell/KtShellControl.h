@@ -827,6 +827,29 @@ namespace KtShell {
 			 /// Get the last object from the current line.
 			 /// TODO: FIXX!  Use regex to get this?
 			 /// </summary>
+			 /// <summary>
+			 /// Index of the bracket matching the closer at line[close], skipping nested brackets and quoted strings; -1 if none.
+			 /// </summary>
+	private: int FindOpenBracket(String ^ line, int close)
+			 {
+				 int depth = 0;
+				 for (int i = close; i >= 0; --i)
+				 {
+					 Char ch = line[i];
+					 if (ch == '"' || ch == '\'')
+					 {
+						 i = (i > 0) ? line->LastIndexOf(ch, i - 1) : -1;	// jump to the opening quote
+						 if (i < 0)
+							 return -1;
+					 }
+					 else if (ch == ']' || ch == ')' || ch == '}')
+						 ++depth;
+					 else if ((ch == '[' || ch == '(' || ch == '{') && --depth == 0)
+						 return i;
+				 }
+				 return -1;
+			 }
+
 	private: String ^ GetLastObject(String ^ regularExpression)
 			 {
 				 String ^ object = "";
@@ -847,9 +870,25 @@ namespace KtShell {
 					 switch (lastChar)
 					 {
 					 case ']':
-						 //idx = line->LastIndexOf('[');
-						 object = "[ ]";					// Temp hack for Python - object = list
+					 {
+						 // Subscript like foo[0] or a.b[i][j]: walk back over the brackets and the name before each
+						 int start = line->Length;
+						 while (start > 0 && line[start - 1] == ']')
+						 {
+							 start = FindOpenBracket(line, start - 1);
+							 if (start < 0)
+								 break;
+							 while (start > 0 && (Char::IsLetterOrDigit(line[start - 1]) || line[start - 1] == '_' || line[start - 1] == '.'))
+								 --start;
+						 }
+						 String ^ expr = (start < 0) ? "" : line->Substring(start);
+						 // Python evaluates this, so only use it if it can't call anything; otherwise assume a list
+						 if (expr->Length == 0 || expr->Contains("(") || expr->Contains(":=") || expr->Contains(" for "))
+							 object = "[ ]";
+						 else
+							 object = expr;
 						 break;
+					 }
 					 case '}':
 						 object = "{ }";					// Temp hack for Python - object = dictionary
 						 break;
@@ -1124,12 +1163,17 @@ namespace KtShell {
 						 listBox1->Hide();
 					 }
 					 // OpenBracket key selects item and Hides box
-					 else if (('(' == e->KeyChar) || 
-						 (e->KeyChar == (Char)Keys::OemPeriod))
+					 // '(' or '.' selects item, then chains a tooltip/autocomplete like the editor does
+					 else if (('(' == e->KeyChar) || ('.' == e->KeyChar))
 					 {
 						 ListBoxSelectItem();
 						 listBox1->Hide();
+						 if ('.' == e->KeyChar)
+							 ShowAutocompleteBox();
+						 else
+							 ShowTooltipHelp();
 						 richTextBox1->AppendText(Char::ToString(e->KeyChar));	// FIXX Invoke
+						 e->Handled = true;
 					 }
 					 // ESC key Hides box without selecting Item
 					 else if ((Char)Keys::Escape == e->KeyChar)
@@ -1216,8 +1260,16 @@ namespace KtShell {
 			String ^ lastword;
 			if (!listBox1->Visible)
 			{
+				// Identifiers can't start with a digit: "3." or "x = [1, 2." is a number, not an object
+				String ^ line = GetLastLine(-1);
+				int start = line->Length;
+				while (start > 0 && (Char::IsLetterOrDigit(line[start - 1]) || line[start - 1] == '_'))
+					--start;
+				if (start < line->Length && Char::IsDigit(line[start]))
+					return;
+
 				listBoxSelectionStart = this->richTextBox1->SelectionStart + 1;
-				lastword = GetLastObject(" (+-*/=");     // Get the object preceding the cursor
+				lastword = GetLastObject(" \t(+-*/=,[{:;%<>&|~!@");     // Get the object preceding the cursor
 				//lastword = GetLastWord("[], ()=");     // Get string preceding the cursor
 				if (!lastword->Equals(""))
 				{
