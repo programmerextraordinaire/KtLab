@@ -9,7 +9,8 @@ KtIde is an interactive Python shell with a code editor and a file tree next to 
 - **Interactive shell**: a real `python -i` session with syntax coloring, multi-line block entry, and error highlighting.
 - **Autocomplete and call tips**: type `.` after an object to get a member list (from `dir()`), or `(` to see its signature.
 - **Smart history**: Up and Down scroll through past commands. If you've typed part of a line, only commands that start with it are shown. History is saved to `History.txt` between sessions.
-- **Script editor**: a Scintilla-based editor with Python syntax highlighting. **F5** runs the current file in the shell.
+- **Script editor**: a Scintilla-based editor with Python syntax highlighting. **F5** runs the current file in the shell, from the file's own folder.
+- **Virtual environments, automatically**: when you run a script, KtIde restarts Python in the script's environment. That's the environment [uv](https://docs.astral.sh/uv/) builds from the script's inline `# /// script` dependencies, or else the nearest `.venv` or `venv` folder at or above the script. Otherwise it uses the default Python. If you've typed anything into the shell, it asks before restarting. The title bar shows which environment is active. A venv whose base Python has been uninstalled is skipped with a warning.
 - **Script tree**: browse your scripts folder. Double-click a file to run it in the shell.
 - **Shell shortcuts**: **Ctrl+L** clears the window, **Ctrl+R** restarts Python, and **Ctrl+N** opens a new editor.
 

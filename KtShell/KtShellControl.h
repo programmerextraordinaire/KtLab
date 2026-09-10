@@ -65,6 +65,9 @@ namespace KtShell {
 
 	public: KtShell::Options ^ options;  // User specified options for the program
 	public: KtShell::History ^ history;
+	private: String ^ pythonOverride;	// Command line for the current script's env; nullptr = options->PythonExecuteable. Kept out of options so it's never saved.
+	private: String ^ declinedPython;	// Env the user said No to; not asked again until the next restart
+	private: bool shellHasState;		// User has typed a command since Python (re)started
 
 	private: System::Windows::Forms::RichTextBox^  richTextBox1;
 	private: String ^ secretStr;
@@ -288,7 +291,6 @@ namespace KtShell {
 				RunPythonInitScripts();
 
 				// Kick off reader thread
-				//KillReadThread();
 				readThread = gcnew Thread(gcnew ThreadStart(this, &KtShell::KtShellControl::ReadPipeThreadProc));
 				readThread->Priority = ThreadPriority::AboveNormal;
 				readThread->IsBackground = true;        // Allow the app to close w/o hanging on thread.
@@ -344,7 +346,7 @@ namespace KtShell {
 
 				 // Convert System::String ^ to C style string pointers
 				 char * lpCurrentDir = (char*) Marshal::StringToHGlobalAnsi(options->StartupDirectory).ToPointer();
-				 char * lpCommandLine = (char*) Marshal::StringToHGlobalAnsi(options->PythonExecuteable).ToPointer();
+				 char * lpCommandLine = (char*) Marshal::StringToHGlobalAnsi(PythonCommand()).ToPointer();
 
 				 // Create the child process. 
 				 BOOL bFuncRetn = CreateProcessA(NULL, 
@@ -361,7 +363,7 @@ namespace KtShell {
 				 if (FALSE == bFuncRetn) 
 				 {
 					 String ^ errstr = "KtShell::CreateProcess failed. Process: [{0}]  Directory: [{1}]";
-					 errstr = String::Format(errstr, options->PythonExecuteable, options->StartupDirectory);
+					 errstr = String::Format(errstr, PythonCommand(), options->StartupDirectory);
 					 throw gcnew System::Exception(errstr);
 				 }
 				 // Clean up
@@ -580,7 +582,13 @@ namespace KtShell {
 					 }
 					 catch (System::Exception ^ e)
 					 {
-						 System::Windows::Forms::MessageBox::Show(e->Message);
+						 // Never block the reader with a dialog: post the error and the text to the shell
+						 // without waiting, or drop them if the shell is gone (e.g. closing)
+						 try
+						 {
+							 this->BeginInvoke(d, String::Concat("\nKtIde: ", e->Message, "\n", text));
+						 }
+						 catch (System::Exception ^) {}
 					 }
 				 }
 				 else
@@ -591,19 +599,6 @@ namespace KtShell {
 				 }
 			 }
 
-
-			 /// <summary>
-			 /// Kill the thread that reads StdIn from the child process.
-			 /// </summary>
-	private: void KillReadThread(void)
-			 {
-				 // Kill stdout read thread for spawned Python
-				 if (readThread)
-				 {
-					 readThread->Interrupt();
-					 readThread = nullptr;
-				 }
-			 }
 
 			 /// <summary>
 			 /// Kill the Child process (Python shell).
@@ -628,26 +623,27 @@ namespace KtShell {
 	public:
 		bool RestartProcess(void)
 		{
-			// Kill Python child process and Stdin read thread
+			// Kill Python only: the read thread keeps reading the same pipe, which the new process inherits
 			//richTextBox1->Clear();
 			richTextBox1->AppendText(prompt);
 			richTextBox1->AppendText("============================= RESTART =============================\n");
 			KillChildProcess();
-			KillReadThread();
 			Thread::Sleep(200);
 			bool retval = CreateChildProcess();
 			Thread::Sleep(200);
 			richTextBox1->AppendText(prompt);
 			LoadOptions();
+			RunPythonInitScripts();		// New process: reload the autocomplete and _ktrun helpers
+			shellHasState = false;
+			declinedPython = nullptr;
 
 			return retval;
 		}
 
 	public: void Shutdown(void)
 			{
-				// Kill Python child process and Stdin read thread
+				// Kill Python; the read thread is a background thread and exits with the app
 				KillChildProcess();
-				KillReadThread();
 				if (options)
 					options->SerializeXML();    // Save our variables
 			}
@@ -768,14 +764,11 @@ namespace KtShell {
 		{
 			if (filename)
 			{
-				bool python2 = false;
+				filename = IO::Path::GetFullPath(filename);
+				SwitchPythonFor(filename);
 				Threading::Interlocked::Exchange(secretPython, 0);    // Public mode (secretPython=0)
-				// Python3 now default
-				String ^ cmd = String::Format("exec(open(r'{0}').read())", filename);
-				if (python2)
-				{
-					cmd = String::Format("execfile(r'{0}')", filename);
-				}
+				// _ktrun (init.py) runs it in the shell's namespace from its own folder, with __file__ set
+				String ^ cmd = String::Format("_ktrun(r'{0}')", filename);
 
 				// Send to history, add line feed, and send to Python
 				history->SaveHistoryLine(cmd);
@@ -783,6 +776,125 @@ namespace KtShell {
 				WriteToProcess(cmd);
 				this->SafeAppendText(cmd);
 			}
+		}
+
+	private:
+		String ^ PythonCommand() { return pythonOverride ? pythonOverride : options->PythonExecuteable; }
+
+		/// <summary>
+		/// Restart Python in the script's environment if it isn't already running there.
+		/// Asks first only if the user has typed something into the shell since the last restart.
+		/// </summary>
+		void SwitchPythonFor(String ^ file)
+		{
+			String ^ exe = ScriptPython(file);
+			String ^ wanted = exe ? String::Format("\"{0}\" -i", exe) : options->PythonExecuteable;
+			if (String::Equals(wanted, PythonCommand(), StringComparison::OrdinalIgnoreCase))
+				return;
+			// The env folder (two up from Scripts\python.exe), shown in the title bar
+			String ^ name = exe ? IO::Path::GetDirectoryName(IO::Path::GetDirectoryName(exe)) : "default";
+			if (shellHasState)
+			{
+				if (String::Equals(wanted, declinedPython))
+					return;
+				String ^ msg = String::Format("Switch Python to {0}?\n\nRestarting clears what you've defined in the shell.", name);
+				if (MessageBox::Show(msg, "KtIde", MessageBoxButtons::YesNo, MessageBoxIcon::Question) == System::Windows::Forms::DialogResult::No)
+				{
+					declinedPython = wanted;
+					return;
+				}
+			}
+			pythonOverride = wanted;
+			Form ^ form = FindForm();
+			if (form)
+				form->Text = String::Concat("Kt IDE - Python: ", name);
+			RestartProcess();
+		}
+
+		/// <summary>
+		/// python.exe for a script: its PEP 723 env (via uv), else the nearest working venv
+		/// at or above its folder (stopping at ScriptDirectory), else nullptr for the default.
+		/// </summary>
+		String ^ ScriptPython(String ^ file)
+		{
+			using namespace System::Text::RegularExpressions;
+			if (Regex::IsMatch(IO::File::ReadAllText(file), "^# /// script\\s*$", RegexOptions::Multiline))
+			{
+				String ^ script = String::Format("--script \"{0}\"", file);
+				String ^ busy = String::Format("uv: installing packages for {0} ...", IO::Path::GetFileName(file));
+				if (RunUv(String::Concat("sync ", script), busy))
+					return RunUv(String::Concat("python find ", script), nullptr);
+			}
+
+			String ^ root = IO::Path::GetFullPath(options->ScriptDirectory)->TrimEnd('\\');
+			for (String ^ dir = IO::Path::GetDirectoryName(file); dir; dir = IO::Path::GetDirectoryName(dir))
+			{
+				for each (String ^ name in gcnew array<String ^> { ".venv", "venv" })
+				{
+					String ^ cfg = IO::Path::Combine(dir, name, "pyvenv.cfg");
+					if (!IO::File::Exists(cfg))
+						continue;
+					// A venv whose base Python was uninstalled (its "home") can't start
+					bool homeOK = true;
+					for each (String ^ line in IO::File::ReadAllLines(cfg))
+						if (line->StartsWith("home"))
+							homeOK = IO::Directory::Exists(line->Substring(line->IndexOf('=') + 1)->Trim());
+					String ^ exe = IO::Path::Combine(dir, name, "Scripts\\python.exe");
+					if (homeOK && IO::File::Exists(exe))
+						return exe;
+					Note(String::Format("Ignoring broken venv {0} (its base Python is gone).", IO::Path::Combine(dir, name)));
+				}
+				if (String::Equals(dir->TrimEnd('\\'), root, StringComparison::OrdinalIgnoreCase))
+					break;
+			}
+			return nullptr;
+		}
+
+		/// <summary>
+		/// Run uv and return its trimmed stdout, or nullptr (after showing why) if it fails.
+		/// Shows busyNote if uv is still running after a second, e.g. installing packages.
+		/// </summary>
+		String ^ RunUv(String ^ args, String ^ busyNote)
+		{
+			Diagnostics::ProcessStartInfo ^ psi = gcnew Diagnostics::ProcessStartInfo("uv", args);
+			psi->UseShellExecute = false;
+			psi->CreateNoWindow = true;
+			psi->RedirectStandardOutput = true;
+			psi->RedirectStandardError = true;
+			Diagnostics::Process ^ p;
+			try
+			{
+				p = Diagnostics::Process::Start(psi);
+			}
+			catch (Win32Exception ^)
+			{
+				Note("uv isn't on PATH, so this script's dependencies weren't installed.");
+				return nullptr;
+			}
+			// Read both pipes async so a chatty uv can't fill one and deadlock
+			Tasks::Task<String ^> ^ out = p->StandardOutput->ReadToEndAsync();
+			Tasks::Task<String ^> ^ err = p->StandardError->ReadToEndAsync();
+			// ponytail: blocks the UI while uv installs; move to a background thread if first runs get long
+			if (busyNote && !p->WaitForExit(1000))
+			{
+				Note(busyNote);
+				richTextBox1->Update();
+			}
+			p->WaitForExit();
+			if (p->ExitCode != 0)
+			{
+				Note(err->Result->Trim());
+				return nullptr;
+			}
+			return out->Result->Trim();
+		}
+
+		/// <summary>
+		/// Show a message from KtIde in the shell, followed by a fresh prompt.
+		/// </summary>
+		void Note(String ^ msg)
+		{
+			SafeAppendText(String::Concat(msg, "\n", prompt));
 		}
 
 		/// <summary>
@@ -1489,6 +1601,8 @@ namespace KtShell {
 
 					// Send to history, add line feed, and send to Python
 					history->SaveHistoryLine(line);
+					if (line->Trim()->Length > 0)
+						shellHasState = true;
 					if (line->EndsWith(":") && !indentedBlock)
 					{
 						// This is the start of our indent history

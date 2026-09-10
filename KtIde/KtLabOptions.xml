@@ -16,6 +16,18 @@
     with open(filepath, 'rb') as file:
         exec(compile(file.read(), filepath, 'exec'), globals, locals)
 
+def _ktrun(path):
+    # F5 / Run: execute a script in the shell's namespace, from its own folder, with __file__ set
+    import os, sys
+    folder = os.path.dirname(path)
+    os.chdir(folder)
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    g = globals()
+    g['__file__'] = path
+    with open(path, 'rb') as f:
+        exec(compile(f.read(), path, 'exec'), g)
+
 def _find_constructor(class_ob):
     # Given a class object, return a function object used for the
     # constructor (ie, __init__() ) or None if we can't find one.

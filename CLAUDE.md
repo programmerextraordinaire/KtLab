@@ -21,4 +21,5 @@ Not in the solution (legacy, don't touch unless asked): `KtLab/` (old C++ app), 
 ## Gotchas
 - Python is configured in `KtIde/KtLabOptions.xml` (`python.exe -i` from PATH, scripts in `C:\Python\Scripts`). It's read from the working directory at startup, so run `KtIde.exe` from its own folder.
 - Stale hardcoded path: `C:\Python\Python3` in unused `ShellRedirect.cs`.
-- `KtIde/init.py` is duplicated inside `<InitScript>` in `KtIde/KtLabOptions.xml` — change both together.
+- `KtIde/init.py` is duplicated inside `<InitScript>` in `KtIde/KtLabOptions.xml` — change both together. `RunFile` calls its `_ktrun`, so F5 breaks if init.py doesn't load.
+- Per-script env switching (`SwitchPythonFor`/`ScriptPython` in `KtShellControl.h`) keeps the active interpreter in `pythonOverride`, never in `options` — options are re-read on restart and saved on exit.
