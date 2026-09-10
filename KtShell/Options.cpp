@@ -9,7 +9,7 @@ namespace KtShell {
         OptionsFileName = "KtLabOptions.xml";       // File name for Serialization / Deserialization
         StartupDirectory = ".\\";                   // Use the current directory
         ScriptDirectory = "..";						// Goofy, but not a bad default
-        PythonExecuteable = "C:\\Python\\Python3\\python.exe -i";       // Run Python (CPython)
+        PythonExecuteable = "python.exe -i";       // Run Python (CPython) found on PATH
         PythonErrorMessage = "Traceback (most recent call last):"; // Default error message
         FontName = "Courier New";
         FontSize = 10;

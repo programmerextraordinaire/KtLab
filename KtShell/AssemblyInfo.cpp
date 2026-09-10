@@ -39,7 +39,4 @@ using namespace System::Security::Permissions;
 
 [assembly:SecurityPermission(SecurityAction::RequestMinimum, UnmanagedCode = true)];
 
-//[assembly:AssemblyDelaySign(false)];
-//[assembly:AssemblyKeyFile("C:\\Documents and Settings\\tkp\\My Documents\\Business\\TKPCorp\\Keys\\TKPCorp.snk")];
-//[assembly:AssemblyKeyFileAttribute("C:\\Documents and Settings\\tkp\\My Documents\\Business\\TKPCorp\\Keys\\TKPCorp.snk")];
 

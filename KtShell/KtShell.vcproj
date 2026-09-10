@@ -70,7 +70,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="1"
-				KeyFile="C:\Projects\TKPCorp\KtLab\KtIde\TKPCorp.snk"
+				KeyFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -221,7 +221,7 @@
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="17"
-				KeyFile="C:\Projects\TKPCorp\KtLab\KtIde\TKPCorp.snk"
+				KeyFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"

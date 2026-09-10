@@ -63,7 +63,7 @@
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
-				KeyFile="C:\Documents and Settings\tkp\My Documents\Business\TKPCorp\Keys\TKPCorp.snk"
+				KeyFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"

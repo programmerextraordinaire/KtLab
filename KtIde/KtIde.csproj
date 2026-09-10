@@ -11,8 +11,6 @@
     <RootNamespace>KtIde</RootNamespace>
     <AssemblyName>KtIde</AssemblyName>
     <ApplicationIcon>KtLogo.ico</ApplicationIcon>
-    <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile>TKPCorp.snk</AssemblyOriginatorKeyFile>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
@@ -111,7 +109,6 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="TKPCorp.snk" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
@@ -178,9 +175,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <PropertyGroup>
-    <PostBuildEvent>copy $(TargetFileName) c:\Python\Python3
-copy "$(TargetDir)\default.xml" c:\Python\Python3
-copy "$(TargetDir)\python.xml" c:\Python\Python3</PostBuildEvent>
-  </PropertyGroup>
 </Project>

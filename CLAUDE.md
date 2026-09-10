@@ -15,10 +15,10 @@ Not in the solution (legacy, don't touch unless asked): `KtLab/` (old C++ app), 
 ```
 - Use `Mixed Platforms` — it's the only solution platform that builds all three projects.
 - KtShell needs the VS "Desktop development with C++" workload (toolset v145). Release config uses `/clr:pure` (deprecated).
-- Post-build steps copy outputs to `C:\Python\Python3`. If that folder doesn't exist, add `/p:PostBuildEventUseInBuild=false /p:PostBuildEvent=`.
 - No tests. Verify by building and running `KtIde\bin\Debug\KtIde.exe`.
+- Public repo (MIT): keep personal paths and signing keys (`*.snk`, gitignored) out of it.
 
 ## Gotchas
-- Python is configured in `KtIde/KtLabOptions.xml` (`C:\Users\thane\AppData\Local\Python\bin\python.exe -i`, scripts in `C:\Python\Scripts`). It's read from the working directory at startup, so run `KtIde.exe` from its own folder.
-- Stale hardcoded paths: `C:\Python\Python3` in the post-build copies and unused `ShellRedirect.cs`; KtShell's link `KeyFile` points at an old `C:\Users\Magna\...` path.
+- Python is configured in `KtIde/KtLabOptions.xml` (`python.exe -i` from PATH, scripts in `C:\Python\Scripts`). It's read from the working directory at startup, so run `KtIde.exe` from its own folder.
+- Stale hardcoded path: `C:\Python\Python3` in unused `ShellRedirect.cs`.
 - `KtIde/init.py` is duplicated inside `<InitScript>` in `KtIde/KtLabOptions.xml` — change both together.

@@ -70,11 +70,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
-      <KeyFile>C:\Users\Magna\Documents\Visual Studio 2010\Projects\KtLab\KtIde\TKPCorp.snk</KeyFile>
     </Link>
-    <PostBuildEvent>
-      <Command>copy "$(TargetPath)" c:\Python\Python3</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -92,7 +88,6 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
-      <KeyFile>C:\Users\Magna\Documents\Visual Studio 2010\Projects\KtLab\KtIde\TKPCorp.snk</KeyFile>
     </Link>
     <PostBuildEvent>
       <Message>Add to Global Assembly Cache gacutil /i $(OutDir)$(ProjectName).dll /f</Message>
