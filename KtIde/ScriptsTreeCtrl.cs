@@ -182,6 +182,7 @@ namespace KtIde
 		public void InitializeScriptTree(string parentdir)
 		{
 			this.scriptPath = parentdir;
+			this.treeView1.Nodes.Clear();		// Called again when the script folder changes
 			this.treeView1.Nodes.Add(scriptPath);
 			this.PopulateTreeView(scriptPath, treeView1.Nodes[0]);
 			this.treeView1.Nodes[0].Expand();

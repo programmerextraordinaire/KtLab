@@ -33,10 +33,11 @@ public:
          // Create an instance of the XmlSerializer class of type Form1       
         XmlSerializer ^ x = gcnew XmlSerializer( this->GetType() );
 
-        // Read the XML file; create it if it doesn't exist ---
-		FileStream ^ fs = gcnew FileStream( OptionsFileName, FileMode::OpenOrCreate );
+        // Read the XML file; the app never writes it, so the user's edits stick
+		FileStream ^ fs = nullptr;
         try
         {
+			fs = gcnew FileStream( OptionsFileName, FileMode::Open, FileAccess::Read );
 			// Deserialize the content of the XML file to a Contact array 
 			// utilizing XMLReader.
 			XmlReader ^ reader = gcnew XmlTextReader(fs);         
@@ -51,6 +52,8 @@ public:
 			this->PythonErrorMessage = tmpOptions->PythonErrorMessage;
 			this->InitScript = tmpOptions->InitScript;
 			this->ScriptDirectory = tmpOptions->ScriptDirectory;
+			this->GetMethods = tmpOptions->GetMethods;
+			this->GetMethodArgs = tmpOptions->GetMethodArgs;
 		}
         catch( System::Exception ^ e )
         {
@@ -69,16 +72,6 @@ public:
 			if ( fs )
 				delete (IDisposable^)fs;
 		}
-    }
-
-public:
-    void SerializeXML(void)
-    {
-        // Serialize the content of the String into the xml file
-		Options ^ tmpOptions = this;
-        XmlSerializer ^ x = gcnew XmlSerializer( this->GetType() );
-		TextWriter ^ writer = gcnew StreamWriter( OptionsFileName );
-        x->Serialize( writer, tmpOptions );
     }
 };
 

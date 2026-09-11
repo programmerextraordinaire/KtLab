@@ -644,8 +644,6 @@ namespace KtShell {
 			{
 				// Kill Python; the read thread is a background thread and exits with the app
 				KillChildProcess();
-				if (options)
-					options->SerializeXML();    // Save our variables
 			}
 			//-------------------------------------------------------------------------------------
 			//-----------  E N D   O F   C H I L D   P R O C E S S   F U N C T I O N S   ----------
